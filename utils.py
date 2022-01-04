@@ -29,5 +29,13 @@ def spd_dist(X, Y, metric='intrinsic'):
     else:
         raise ValueError('Error: must specify intrinsic or extrinsic metric')
         
+def exp_map(X, v):
+    """Exponential mapping from tangent space at X to SPD Manifold"""
+    # X: p x p matrix in SPD Manfiold
+    # v: tangent vector in Tx(M) (defined at X)
+    # Output: a point Y in M (shortest geodesic curve along M in direction v)
+    
+    
+        
 
         
