@@ -110,30 +110,6 @@ def distance_wasserstein(A, B):
     return np.sqrt(np.trace(A + B - 2*C))
 
 
-def distance(A, B, metric='riemann'):
-    """Distance between two covariance matrices A and B according to the
-    metric.
-    :param A: First covariance matrix
-    :param B: Second covariance matrix
-    :param metric: the metric (Default value 'riemann'), can be : 'riemann' ,
-        'logeuclid' , 'euclid' , 'logdet', 'kullback', 'kullback_right',
-        'kullback_sym'.
-    :returns: the distance between A and B
-    """
-    if callable(metric):
-        distance_function = metric
-    else:
-        distance_function = distance_methods[metric]
-
-    if len(A.shape) == 3:
-        d = np.empty((len(A), 1))
-        for i in range(len(A)):
-            d[i] = distance_function(A[i], B)
-    else:
-        d = distance_function(A, B)
-
-    return d
-
 # ----------------
 # -- TESTING -----
 # ----------------
@@ -166,7 +142,9 @@ def spd_dist(X, Y, metric='intrinsic'):
         return dist
     else:
         raise ValueError('Error: must specify intrinsic or extrinsic metric')
-
+        
+#spd_dists = np.array([spd_dist(c[0], c[1]) for c in C_list])
+spd_dists = np.array([spd_dist(c[0], c[1], metric='extrinsic') for c in C_list])
         
 def exp_map(X, V):
     """Exponential mapping from tangent space at X to SPD Manifold"""
@@ -182,7 +160,81 @@ def exp_map(X, V):
     
     
     
-        
+# ---------------------------------------------------
+# -- TESTING FORMULA TO USE FOR EXP/LOG MAPPING -----
+# ---------------------------------------------------
+
+def sqrtm(Ci):
+    r"""Return the matrix square root of a covariance matrix defined by :
+    .. math::
+        \mathbf{C} = \mathbf{V} \left( \mathbf{\Lambda} \right)^{1/2} \mathbf{V}^\top
+    where :math:`\mathbf{\Lambda}` is the diagonal matrix of eigenvalues
+    and :math:`\mathbf{V}` the eigenvectors of :math:`\mathbf{Ci}`
+    :param Ci: the coavriance matrix
+    :returns: the matrix square root
+    """  # noqa
+    return _matrix_operator(Ci, np.sqrt)
+
+
+def logm(Ci):
+    r"""Return the matrix logarithm of a covariance matrix defined by :
+    .. math::
+        \mathbf{C} = \mathbf{V} \log{(\mathbf{\Lambda})} \mathbf{V}^\top
+    where :math:`\mathbf{\Lambda}` is the diagonal matrix of eigenvalues
+    and :math:`\mathbf{V}` the eigenvectors of :math:`\mathbf{Ci}`
+    :param Ci: the covariance matrix
+    :returns: the matrix logarithm
+    """
+    return _matrix_operator(Ci, np.log)
+
+
+def expm(Ci):
+    r"""Return the matrix exponential of a covariance matrix defined by :
+    .. math::
+        \mathbf{C} = \mathbf{V} \exp{(\mathbf{\Lambda})} \mathbf{V}^\top
+    where :math:`\mathbf{\Lambda}` is the diagonal matrix of eigenvalues
+    and :math:`\mathbf{V}` the eigenvectors of :math:`\mathbf{Ci}`
+    :param Ci: the coavriance matrix
+    :returns: the matrix exponential
+    """
+    return _matrix_operator(Ci, np.exp)
+
+
+def invsqrtm(Ci):
+    r"""Return the inverse matrix square root of a covariance matrix defined by :
+    .. math::
+        \mathbf{C} = \mathbf{V} \left( \mathbf{\Lambda} \right)^{-1/2} \mathbf{V}^\top
+    where :math:`\mathbf{\Lambda}` is the diagonal matrix of eigenvalues
+    and :math:`\mathbf{V}` the eigenvectors of :math:`\mathbf{Ci}`
+    :param Ci: the coavriance matrix
+    :returns: the inverse matrix square root
+    """  # noqa
+    def isqrt(x): return 1. / np.sqrt(x)
+    return _matrix_operator(Ci, isqrt)
+
+
+# WE USE: A = Q*D*Q^T (if A real symmetric)
+test_X = x # simple test case to learn
+operator = np.sqrt # define for any operation we need to use in exp/log map
+
+# We get eigenvals/vecs from original SPD Matrix
+eigvals, eigvects = linalg.eigh(test_X, check_finite=False)
+print(eigvals)
+print(eigvects)
+# We get eigenvals to form diagonal matrix D 
+eigvals = np.diag(operator(eigvals))
+print(eigvals)
+# We multiple to get eigen decomposition: eigenvectors are columns of Q
+np.dot(np.dot(eigvects, eigvals), eigvects.T)
+
+linalg.sqrtm(test_X)
+
+# NOTE: We can apply this to square root, log, exp, and inverse matrix operations
+# A^-1 = Q*D^-1*QT
+
+
+
+
 
         
     
